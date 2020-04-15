@@ -1,14 +1,15 @@
-import urllib.request
 import datetime
 import json
+import urllib.request
 
-apiKey = ""
 siteBase = "https://api.govinfo.gov/"
+
+saveLocation = "content/"
 
 def getAPIKey():
     f = open("apiKey", 'rt')
     with open("apiKey", 'rt') as key:
-        apiKey = key.read()
+        return key.read()
 
 def getCollections():
     """
@@ -16,8 +17,7 @@ def getCollections():
     """
 
     #Check if the API key is blank, if so, load it
-    if apiKey == "":
-        getAPIKey()
+    apiKey = getAPIKey()
 
     #Build the site.  This one is simple as it requires only the API key
     site = siteBase + "collections?api_key=" + apiKey
@@ -25,7 +25,7 @@ def getCollections():
     #Load and save the site
     response = urllib.request.urlopen(site)
     webcontent = response.read()
-    f = open("Collections.json", 'wb')
+    f = open(saveLocation + "Collections.json", 'wb')
     f.write(webcontent)
     f.close()
 
@@ -53,8 +53,7 @@ def getCollection(collection: str, startDate: str, endDate: str = 'none',
     """
 
     #Check if the API key is blank, if so, load it
-    if apiKey == "":
-        getAPIKey()
+    apiKey = getAPIKey()
 
     #Begin appending the URL together
     #Add the collection and the start date in the correct format
@@ -85,7 +84,7 @@ def getCollection(collection: str, startDate: str, endDate: str = 'none',
     #Load and save the site
     response = urllib.request.urlopen(site)
     webcontent = response.read()
-    f = open(collection + ".json", 'wb')
+    f = open(saveLocation + collection + ".json", 'wb')
     f.write(webcontent)
     f.close()
 
@@ -100,16 +99,15 @@ def getPackageSummary(pkgID: str):
     """
 
     #Check if the API key is blank, if so, load it
-    if apiKey == "":
-        getAPIKey()
+    apiKey = getAPIKey()
 
     #Build the site URL.  Simple for this one as its only variables are required
-    site = siteBase + "packages/" + pkgID + "/summary?api_key" + apiKey
+    site = siteBase + "packages/" + pkgID + "/summary?api_key=" + apiKey
 
     #Load and save the site
     response = urllib.request.urlopen(site)
     webcontent = response.read()
-    f = open(pkgID + ".json", 'wb')
+    f = open(saveLocation + pkgID + ".json", 'wb')
     f.write(webcontent)
     f.close()
 
@@ -123,8 +121,7 @@ def getPackage(pkgID: str, contentType: str):
     """
 
     #Check if the API key is blank, if so, load it
-    if apiKey == "":
-        getAPIKey()
+    apiKey = getAPIKey()
 
     #Build the site URL.  Simple for this one as its only variables are required
     site = (siteBase + "packages/" + pkgID + "/" + contentType + "?api_key="
@@ -133,7 +130,7 @@ def getPackage(pkgID: str, contentType: str):
     #Load and save the site
     response = urllib.request.urlopen(site)
     webcontent = response.read()
-    f = open(pkgID + "." + contentType, 'wb')
+    f = open(saveLocation + pkgID + "." + contentType, 'wb')
     f.write(webcontent)
     f.close()
 
@@ -155,8 +152,7 @@ def getPublished(dateIssuedStart: str, collection: str, offset: int = 0,
     """
     
     #Check if the API key is blank, if so, load it
-    if apiKey == "":
-        getAPIKey()
+    apiKey = getAPIKey()
 
     #Begin putting the site together with the required variables
     site = (siteBase + "published/" + dateIssuedStart + "?offset="
@@ -180,6 +176,8 @@ def getPublished(dateIssuedStart: str, collection: str, offset: int = 0,
 
     response = urllib.request.urlopen(site)
     webcontent = response.read()
-    f = open("Published" + ".json", 'wb')
+    f = open(saveLocation + "Published" + ".json", 'wb')
     f.write(webcontent)
     f.close()
+
+getCollections()
