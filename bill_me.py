@@ -19,13 +19,13 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # Set the site base. It should never change.
-siteBase = "https://api.govinfo.gov/"
+site_base = "https://api.govinfo.gov/"
 
 # Set the save location.
 # TODO: Set as an optional passable variable from commandline
-saveLocation = "content/"
+save_location = "content/"
 
-def getPage(link) -> bytes:
+def get_page(link) -> bytes:
     """
     A helper definition to gather the web page and return it as a bytes stream
     """
@@ -61,23 +61,23 @@ def getPage(link) -> bytes:
     logger.info("Checking for content")
     while site.get('message') == "No results found":
         logger.warning("Needed collection repull")
-        site = getPage(site)
+        site = get_page(site)
 
     return site
 
-def saveToJson(jsonIn: bytes, name: str):
+def save_to_json(json_in: bytes, name: str):
     """
     A generic save definition. Intakes both the JSON list and the collection
     type, be it the meta list of collections, or the individual collection lists
     """
     # Inform the logger of the location and name of the file
-    logger.info(f"Saving to \'{saveLocation}{name}.json\'")
+    logger.info(f"Saving to \'{save_location}{name}.json\'")
 
     # Open the specified save location and save the file there
-    with open(saveLocation + name + '.json', 'wb') as jsonFile:
-        jsonFile.write(jsonIn)
+    with open(save_location + name + '.json', 'wb') as jsonFile:
+        jsonFile.write(json_in)
 
-def getAPIKey() -> str:
+def get_API_key() -> str:
     """
     A helper definition to grab the API key from its file. This is used so the
     API never needs to be stored within the program itself and can be changed
@@ -86,12 +86,12 @@ def getAPIKey() -> str:
     # Check to see if the save location exists. It is here because this is
     # always going to be the definition that is called before any other that
     # would require the save location.
-    if not os.path.isdir(saveLocation):
+    if not os.path.isdir(save_location):
         # If it doesn't exist, inform the logger
-        logger.info(f"\'{saveLocation}\' does not exist. Creating it now.")
+        logger.info(f"\'{save_location}\' does not exist. Creating it now.")
 
         # Create the directory
-        os.mkdir(saveLocation)
+        os.mkdir(save_location)
 
     # Inform the logger that the API key is being retrieved
     logger.info("Getting API key and returning")
@@ -101,45 +101,43 @@ def getAPIKey() -> str:
     with open("apiKey", 'rt') as key:
         return key.read()
 
-def getCollections() -> json:
-    """
-    Return a JSON list of all of the different collections
-    """
+def get_collections() -> json:
+    """Return a JSON list of all of the different collections"""
     # Inform the logger that the collections are being downloaded
     logger.info("Getting the collections")
 
     #Build the site.  This one is simple as it requires only the API key
-    site = siteBase + "collections"
+    site = site_base + "collections"
 
     # Inform the logger that the site is being accessed
     logger.info(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
-    site = site + "?api_key=" + getAPIKey()
+    site = site + "?api_key=" + get_API_key()
 
     # Inform the logger that the page is being returned.
     logger.debug("Returning getPage")
 
     # Return the page
-    return getPage(site)
+    return get_page(site)
 
-def getCollection(collection: str, startDate: str, endDate: str = 'none', 
-                  offset: int = 0, pageSize: int = 10, congress: int = -1,
-                  docClass: str = 'none') -> json:
+def get_collection(collection: str, start_date: str, end_date: str = 'none', 
+                  offset: int = 0, page_size: int = 10, congress: int = -1,
+                  doc_class: str = 'none') -> json:
     """
     Get the packages from a specific collection starting from a specific date
     and time.  Can optionally define an end time as well.\n
     collection  = The collection you're looking for.\n
-    startDate   = The start date in the YYYY-MM-DD'T'HH:MM:SS'Z' format.\n
-    endDate     = The end date in the YYYY-MM-DD'T'HH:MM:SS'Z' format.  Not
+    start_date  = The start date in the YYYY-MM-DD'T'HH:MM:SS'Z' format.\n
+    end_date    = The end date in the YYYY-MM-DD'T'HH:MM:SS'Z' format.  Not
                   necessary to run.\n
     offset      = The number of items to skip before it starts displaying.
                   Starting at 0 is normal and default.  Not necessary to run.\n
-    pageSize    = The number of items to return on a page.  10 is default.  Not
+    page_size   = The number of items to return on a page.  10 is default.  Not
                   necessary to run.\n
     congress    = The number of the congress to search in.  Not necessary to 
                   run.\n
-    docClass    = The type of classification for the item you're looking for.
+    doc_class   = The type of classification for the item you're looking for.
                   e.g. s, hr, hres, sconres, et cetera.\n
 
     This will eventually return the JSON of the collection that's being searched
@@ -148,26 +146,26 @@ def getCollection(collection: str, startDate: str, endDate: str = 'none',
 
     # Begin appending the URL together
     # Add the collection and the start date in the correct format
-    site = (siteBase + "collections/" + collection + "/"
-                + startDate.replace(':', '%3A'))
+    site = (site_base + "collections/" + collection + "/"
+                + start_date.replace(':', '%3A'))
 
     # If there is an end date, append it in the correct format
-    if endDate != 'none':
-        site = site + "/" + endDate.replace(':', '%3A')
+    if end_date != 'none':
+        site = site + "/" + end_date.replace(':', '%3A')
 
     # Add the offset
     site = site + "?offset=" + str(offset)
 
     # Add the page size
-    site = site + "&pageSize=" + str(pageSize)
+    site = site + "&pageSize=" + str(page_size)
 
     # If there is a specific congress being searched for
     if congress != -1:
         site = site + "&congress=" + str(congress)
 
     # If there is a specific docClass being searched for
-    if docClass != 'none':
-        site = site + "&docClass=" + docClass
+    if doc_class != 'none':
+        site = site + "&docClass=" + doc_class
     
     # Add the API key
     site = site + "&api_key="
@@ -176,29 +174,29 @@ def getCollection(collection: str, startDate: str, endDate: str = 'none',
     logger.info(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
-    site = site + getAPIKey()
+    site = site + get_API_key()
 
     # Return the page
-    return getPage(site)
+    return get_page(site)
 
-def getPackageSummary(pkgID: str) -> json:
+def get_package_summary(pkgID: str) -> json:
     """
     Get package summary.\n
     pkgID   = The specific ID of the item you're looking for,
               e.g. BILLS-116s3398is
     """
     # Build the site URL.  Simple for this one as its only variables are required
-    site = siteBase + "packages/" + pkgID + "/summary"
+    site = site_base + "packages/" + pkgID + "/summary"
 
     # Inform the logger that the site is being accessed.
     logger.info(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
-    site = site + "?api_key=" + getAPIKey()
+    site = site + "?api_key=" + get_API_key()
 
-    return getPage(site)
+    return get_page(site)
 
-def getPackage(pkgID: str, contentType: str):
+def get_package(pkgID: str, content_type: str):
     """
     Get the specific package in the specified format.\n
     pkgID       = The specific ID of the itme you're looking for,
@@ -208,28 +206,29 @@ def getPackage(pkgID: str, contentType: str):
     """
     # Build the site URL.  Simple for this one as its only variables are
     # required.
-    site = siteBase + "packages/" + pkgID + "/" + contentType
+    site = site_base + "packages/" + pkgID + "/" + content_type
 
     # Inform the logger that the site is being accessed
     logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
-    site = site + "?api_key=" + getAPIKey()
+    site = site + "?api_key=" + get_API_key()
 
     # Inform the logger that the file is being downloaded
-    logger.info(f"Saving to \'{saveLocation}{pkgID}.{contentType}\'")
+    logger.info(f"Saving to \'{save_location}{pkgID}.{content_type}\'")
 
     # Download the file with the specified name and type
-    urllib.request.urlretrieve(site, saveLocation + pkgID + "." + contentType)
+    urllib.request.urlretrieve(site, save_location + pkgID + "." + content_type)
 
-def getPublished(dateIssuedStart: str,collection: str, 
-                 dateIssuedEndDate: str = 'none', offset: int = 0,
-                 pageSize: int = 10, congress: int = -1, docClass: str = 'none',
-                 modifiedSince: str = 'none') -> json:
+def get_published(date_issued_start: str, collection: str,
+                  date_issued_end: str = 'none', offset: int = 0,
+                  page_size: int = 10, congress: int = -1,
+                  doc_class: str = 'none',
+                  modified_since: str = 'none') -> json:
     """
     Get a list of packages based on when they were issued.\n
-    dateIssuedStart     = The start date to look for published items.\n
-    dateIssuedEndDate   = The end date to look for published items\n 
+    date_issued_start   = The start date to look for published items.\n
+    date_issued_end     = The end date to look for published items\n 
     collection          = The collection that the item is in e.g. BILLS.\n
     offset              = The number of items to skip before it starts
                           displaying. Starting at 0 is normal and default. Not
@@ -244,14 +243,14 @@ def getPublished(dateIssuedStart: str,collection: str,
     """
 
     # Begin putting the site together with the required variables
-    site = (siteBase + "published/" + dateIssuedStart)
+    site = (site_base + "published/" + date_issued_start)
 
     # If there is an end date, append it
-    if dateIssuedEndDate != 'none':
-        site = site + "/" + dateIssuedEndDate
+    if date_issued_end != 'none':
+        site = site + "/" + date_issued_end
 
     # Append the required parts of the site
-    site = (site + "?offset=" + str(offset) + "&pageSize=" + str(pageSize) +
+    site = (site + "?offset=" + str(offset) + "&pageSize=" + str(page_size) +
             "&collection=" + collection)
 
     # If a congress is specified, append it
@@ -259,18 +258,18 @@ def getPublished(dateIssuedStart: str,collection: str,
         site = site + "&congress" + str(congress)
 
     # If a docClass is specified, append it
-    if docClass != 'none':
-        site = site + "&docClass=" + docClass
+    if doc_class != 'none':
+        site = site + "&docClass=" + doc_class
     
     # If a modifiedSince date is specified, append it
-    if modifiedSince != 'none':
-        site = site + "&modifiedSince=" + modifiedSince.replace(":","%3A")
+    if modified_since != 'none':
+        site = site + "&modifiedSince=" + modified_since.replace(":","%3A")
 
     # Inform the logger that the site is being accessed
     logger.info(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
-    site = site + "&api_key=" + getAPIKey()
+    site = site + "&api_key=" + get_API_key()
 
     # Return the page
-    return getPage(site)
+    return get_page(site)

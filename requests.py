@@ -2,26 +2,26 @@ import json
 from time import gmtime, strftime
 from urllib.error import HTTPError
 
-from BillMe import *
+from bill_me import *
 
 
-def getAllofType(docuType: str):
+def get_list_of_type(doc_type: str) -> list:
     """
     Get all of the specified type of items. For example, "BILLS" will retrieve
     the packageId of all bills
     """
 
     # Retrieves the total list so the program knows how many entries to expect
-    collections = getCollections()
-    saveToJson(collections)
+    collections = get_collections()
+    save_to_json(collections)
 
     # Set the initial unit count to zero here so it's accessable throughout
-    unitCount = 0
+    unit_count = 0
 
     # Find the specific collection that the user is searching for
     for item in json.loads(collections).get('collections'):
         if item.get('collectionCode') == type:
-            unitCount = item.get('packageCount')
+            unit_count = item.get('packageCount')
 
     # Get the values of the times individually so they can be individually
     # changed if need be. Initially cast as integers so they can be increased
@@ -36,15 +36,15 @@ def getAllofType(docuType: str):
     # Set the end date in the "YYYY-MM-DDTHH:MM:SSZ" format to ensure
     # compatibility with the API. The endDate is the date that is closest to
     # the present.
-    endDate = (str(year) + "-" + str(month) + "-" + str(day) + "T" + str(hour) +
-               ":" + str(minute) + ":" + str(second) + "Z")
+    end_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" + str(hour)
+                + ":" + str(minute) + ":" + str(second) + "Z")
 
     # Build an initially empty list to hold the packageId's
-    itemList = []
+    item_list = []
 
     # Instantiate an initially empty integer to track the total number of
     # entries done.
-    totalNum = 0
+    total_num = 0
 
     # A short loop counter to ensure we're getting all of the entries we need
     # before moving on.
@@ -65,19 +65,19 @@ def getAllofType(docuType: str):
         # Set the start date in the "YYYY-MM-DDTHH:MM:SSZ" format to ensure
         # compatibility with the API. The startDate is the date that is further
         # from the present.
-        startDate = (str(year) + "-" + str(month) + "-" + str(day) + "T" +
+        start_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" +
                      str(hour) + ":" + str(minute) + ":" + str(second) + "Z")
 
         # Get the initial list of published documents.
-        pubList = getPublished(startDate, docuType, endDate, pageSize=100)
+        pub_list = get_published(start_date, doc_type, end_date, page_size=100)
 
         # Get the number of documents in the current listing. Will be the total
         # number of entries in the current selection and is not necessarily
         # equal to unitCount
-        count = json.loads(pubList).get('count')
+        count = json.loads(pub_list).get('count')
 
         # Get the next page from the listing.
-        nextPage = json.loads(pubList).get('nextPage')
+        next_page = json.loads(pub_list).get('nextPage')
 
         # If the number of entries recorded, "j", is less than the total number
         # of entries in the current selection, "count", then continue to iterate
@@ -85,29 +85,29 @@ def getAllofType(docuType: str):
         while j < count:
             # Get the packageId's for each of the entries in the current
             # selection
-            for item in json.loads(pubList).get('packages'):
-                itemList.append(item.get('packageId'))
+            for item in json.loads(pub_list).get('packages'):
+                item_list.append(item.get('packageId'))
                 
                 # Iterate the small counter
                 j = j + 1
 
                 # Iterate the overall counter
-                totalNum = totalNum + 1
+                total_num = total_num + 1
 
             # If there is no next page, go on to the next list
-            if nextPage == None:
+            if next_page == None:
                 break
 
             # If there is a next page, notify the logger, gather the page, and
             # move on to it.
             else:
-                logger.info(f"Moving to page {nextPage}")
-                link = nextPage + "&api_key=" + getAPIKey()
-                pubList = getPage(link)
+                logger.info(f"Moving to page {next_page}")
+                link = next_page + "&api_key=" + get_API_key()
+                pub_list = get_page(link)
 
                 # Set the new nextPage so the program can gather the last page
                 # of entries within the set
-                nextPage = json.loads(pubList).get('nextPage')
+                next_page = json.loads(pub_list).get('nextPage')
         
         # Reset the inner counter so it can be used to track the current number
         # of gathered entries.
@@ -115,20 +115,19 @@ def getAllofType(docuType: str):
 
         # Set the new end date to be the old start date. This ensures there is
         # no gaps in the data being gathered.
-        endDate = startDate
+        end_date = start_date
 
         # Inform the logger of the number of entries gathered up to this point
-        logger.info(f"Gathered {totalNum} entries so far.")
+        logger.info(f"Gathered {total_num} entries so far.")
 
         # if all of the entries have been gathered, break the loop. It's done.
-        if totalNum == unitCount:
+        if total_num == unit_count:
             break
 
     # Write all of the packageId's to a file for use later
-    with open(f"{docuType}_List.txt", 'w') as docList:
-        for item in itemList:
-            docList.write(f"{item}\n")
+    # with open(f"{doc_type}_List.txt", 'w') as doc_list:
+    #     for item in item_list:
+    #         doc_list.write(f"{item}\n")
 
-# 1. Get collection meta-list
-# 2. Get specific collection list in full
-# 3. Get specific article
+    # Return the item_list so the user can do with it what they will
+    return item_list
