@@ -1,6 +1,8 @@
 # Personal files
-apiKey
+.vscode/
 content/
+apiKey
+database_credentials
 Bill List.txt
 
 # Byte-compiled / optimized / DLL files

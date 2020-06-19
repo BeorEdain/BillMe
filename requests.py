@@ -1,24 +1,25 @@
 import json
 from time import gmtime, strftime
-from urllib.error import HTTPError
 
-from bill_me import *
+from api_interface import *
 
 
-def get_list_of_type(doc_type: str) -> list:
+def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
     """
     Get all of the specified type of items. For example, "BILLS" will retrieve
-    the packageId of all bills
+    the packageId of all bills.\n
+    doc_type        = The type of document you want to retrieve. E.g. BILLS\n
+    write_to_file   = Whether or not you want to write the list to a file or
+                      have it returned as a list.
     """
-
-    # Retrieves the total list so the program knows how many entries to expect
+    # Retrieves the total list so the program knows how many entries to expect.
     collections = get_collections()
     save_to_json(collections)
 
-    # Set the initial unit count to zero here so it's accessable throughout
+    # Set the initial unit count to zero here so it's accessable throughout.
     unit_count = 0
 
-    # Find the specific collection that the user is searching for
+    # Find the specific collection that the user is searching for.
     for item in json.loads(collections).get('collections'):
         if item.get('collectionCode') == type:
             unit_count = item.get('packageCount')
@@ -39,7 +40,7 @@ def get_list_of_type(doc_type: str) -> list:
     end_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" + str(hour)
                 + ":" + str(minute) + ":" + str(second) + "Z")
 
-    # Build an initially empty list to hold the packageId's
+    # Build an initially empty list to hold the packageId's.
     item_list = []
 
     # Instantiate an initially empty integer to track the total number of
@@ -50,15 +51,16 @@ def get_list_of_type(doc_type: str) -> list:
     # before moving on.
     j = 0
 
-    # The while loop where all of the logic is done
+    # The while loop where all of the logic is done.
     while True:
         # Check to see if the current month is January. If it is, set it to
         # be December instead and put the year back by one.
         if month - 1 == 0:
             month = 12
             year = year - 1
-        
-        # If the current month is not January, just set it to the previous month
+
+        # If the current month is not January, just set it to the previous
+        # month.
         else:
             month = month - 1
 
@@ -66,14 +68,14 @@ def get_list_of_type(doc_type: str) -> list:
         # compatibility with the API. The startDate is the date that is further
         # from the present.
         start_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" +
-                     str(hour) + ":" + str(minute) + ":" + str(second) + "Z")
+                      str(hour) + ":" + str(minute) + ":" + str(second) + "Z")
 
         # Get the initial list of published documents.
         pub_list = get_published(start_date, doc_type, end_date, page_size=100)
 
         # Get the number of documents in the current listing. Will be the total
         # number of entries in the current selection and is not necessarily
-        # equal to unitCount
+        # equal to unit_count.
         count = json.loads(pub_list).get('count')
 
         # Get the next page from the listing.
@@ -81,20 +83,20 @@ def get_list_of_type(doc_type: str) -> list:
 
         # If the number of entries recorded, "j", is less than the total number
         # of entries in the current selection, "count", then continue to iterate
-        # over it
+        # over it.
         while j < count:
             # Get the packageId's for each of the entries in the current
-            # selection
+            # selection.
             for item in json.loads(pub_list).get('packages'):
                 item_list.append(item.get('packageId'))
-                
-                # Iterate the small counter
+
+                # Iterate the small counter.
                 j = j + 1
 
-                # Iterate the overall counter
+                # Iterate the overall counter.
                 total_num = total_num + 1
 
-            # If there is no next page, go on to the next list
+            # If there is no next page, go on to the next list.
             if next_page == None:
                 break
 
@@ -106,9 +108,9 @@ def get_list_of_type(doc_type: str) -> list:
                 pub_list = get_page(link)
 
                 # Set the new nextPage so the program can gather the last page
-                # of entries within the set
+                # of entries within the set.
                 next_page = json.loads(pub_list).get('nextPage')
-        
+
         # Reset the inner counter so it can be used to track the current number
         # of gathered entries.
         j = 0
@@ -117,17 +119,21 @@ def get_list_of_type(doc_type: str) -> list:
         # no gaps in the data being gathered.
         end_date = start_date
 
-        # Inform the logger of the number of entries gathered up to this point
+        # Inform the logger of the number of entries gathered up to this point.
         logger.info(f"Gathered {total_num} entries so far.")
 
         # if all of the entries have been gathered, break the loop. It's done.
         if total_num == unit_count:
             break
 
-    # Write all of the packageId's to a file for use later
-    # with open(f"{doc_type}_List.txt", 'w') as doc_list:
-    #     for item in item_list:
-    #         doc_list.write(f"{item}\n")
+    # Check whether the user wants to write the list to a file or simply return
+    # it to be manipulated further.
+    if write_to_file:
+        # Write all of the packageId's to a file for use later
+        with open(f"{doc_type}_list.txt", 'w') as doc_list:
+            for item in item_list:
+                doc_list.write(f"{item}\n")
 
-    # Return the item_list so the user can do with it what they will
-    return item_list
+    # If the user simply wants to return the list.
+    else:
+        return item_list
