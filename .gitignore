@@ -1,9 +1,8 @@
 # Personal files
 .vscode/
 content/
-apiKey
-database_credentials
-Bill List.txt
+sensitive/
+Bill_The.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -4,19 +4,8 @@ import logging
 import os
 import urllib.request
 
-# Create custom logger and set the level.
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# Create formatter, create handler, and assign the format to the handler.
-# TODO: Add an option to have a config file for the logger.
-formatter = logging.Formatter('%(filename)s: %(levelname)s: %(funcName)s: ' +
-                              '%(message)s')
-handler = logging.FileHandler('Bill_The.log', 'w')
-handler.setFormatter(formatter)
-
-# Add the handler to the logger.
-logger.addHandler(handler)
+# Create a logger
+logger = build_logger()
 
 # Set the site base. It should never change..
 site_base = "https://api.govinfo.gov/"
@@ -25,13 +14,34 @@ site_base = "https://api.govinfo.gov/"
 # TODO: Set as an optional passable variable from commandline.
 save_location = "content/"
 
+def build_logger() -> logging:
+    """
+    A builder for the log. Probably doesn't need to be a function, but here we
+    are.
+    """
+    # Create custom logger and set the level.
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # Create formatter, create handler, and assign the format to the handler.
+    # TODO: Add an option to have a config file for the logger.
+    formatter = logging.Formatter('%(asctime)s: %(filename)s: %(levelname)s: '+
+                                  '%(funcName)s: %(message)s')
+    handler = logging.FileHandler('Bill_The.log', 'w')
+    handler.setFormatter(formatter)
+
+    # Add the handler to the logger.
+    logger.addHandler(handler)
+
+    return logger
+
 
 def get_page(link: str) -> bytes:
     """
     A helper definition to gather the web page and return it as a bytes stream
     """
     # Inform the logger that the page is being retrieved.
-    logger.info("Getting the page")
+    logger.debug("Getting the page")
 
     # Get the site passed in from the link.
     site = urllib.request.urlopen(link)
@@ -54,12 +64,12 @@ def get_page(link: str) -> bytes:
     # If the API returns the website successfully, but there is no data.
     if json.loads(response).get('message') == "No results found":
         # Inform the logger that there is no data.
-        logger.info("The page requested is empty")
+        logger.debug("The page requested is empty")
 
     # Return the data as a bytes stream.
     return response
 
-    logger.info("Checking for content")
+    logger.debug("Checking for content")
     while site.get('message') == "No results found":
         logger.warning("Needed collection repull")
         site = get_page(site)
@@ -76,8 +86,8 @@ def save_to_json(json_in: bytes, name: str):
     logger.info(f"Saving to \'{save_location}{name}.json\'")
 
     # Open the specified save location and save the file there.
-    with open(save_location + name + '.json', 'wb') as jsonFile:
-        jsonFile.write(json_in)
+    with open(save_location + name + '.json', 'wb') as json_file:
+        json_file.write(json_in)
 
 
 def get_API_key() -> str:
@@ -97,10 +107,10 @@ def get_API_key() -> str:
         os.mkdir(save_location)
 
     # Inform the logger that the API key is being retrieved.
-    logger.info("Getting API key and returning")
+    logger.debug("Getting API key and returning")
 
     # Open and return the API key.
-    with open("apiKey", 'rt') as key:
+    with open("sensitive/apiKey", 'rt') as key:
         return key.read()
 
 
@@ -113,13 +123,10 @@ def get_collections() -> bytes:
     site = site_base + "collections"
 
     # Inform the logger that the site is being accessed.
-    logger.info(f"Accessing {site}")
+    logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
     site = site + "?api_key=" + get_API_key()
-
-    # Inform the logger that the page is being returned.
-    logger.debug("Returning getPage")
 
     # Return the page.
     return get_page(site)
@@ -174,7 +181,7 @@ def get_collection(collection: str, start_date: str, end_date: str = 'none',
     site = site + "&api_key="
 
     # Inform the logger that the site is being accessed.
-    logger.info(f"Accessing {site}")
+    logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
     site = site + get_API_key()
@@ -194,7 +201,7 @@ def get_package_summary(pkgID: str) -> bytes:
     site = site_base + "packages/" + pkgID + "/summary"
 
     # Inform the logger that the site is being accessed.
-    logger.info(f"Accessing {site}")
+    logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
     site = site + "?api_key=" + get_API_key()
@@ -274,7 +281,7 @@ def get_published(date_issued_start: str, collection: str,
         site = site + "&modifiedSince=" + modified_since.replace(":", "%3A")
 
     # Inform the logger that the site is being accessed.
-    logger.info(f"Accessing {site}")
+    logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
     site = site + "&api_key=" + get_API_key()

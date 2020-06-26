@@ -1,10 +1,12 @@
 import json
+from datetime import datetime, timedelta
 from time import gmtime, strftime
 
 from api_interface import *
 
 
-def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
+def get_list_of_type(doc_type: str, write_to_file: bool,
+                     num_entries) -> list:
     """
     Get all of the specified type of items. For example, "BILLS" will retrieve
     the packageId of all bills.\n
@@ -12,33 +14,12 @@ def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
     write_to_file   = Whether or not you want to write the list to a file or
                       have it returned as a list.
     """
-    # Retrieves the total list so the program knows how many entries to expect.
-    collections = get_collections()
-    save_to_json(collections)
 
-    # Set the initial unit count to zero here so it's accessable throughout.
-    unit_count = 0
+    # Set the current format to the ISO8601 format.
+    time_format = "%Y-%m-%dT%H:%M:%SZ"
 
-    # Find the specific collection that the user is searching for.
-    for item in json.loads(collections).get('collections'):
-        if item.get('collectionCode') == type:
-            unit_count = item.get('packageCount')
-
-    # Get the values of the times individually so they can be individually
-    # changed if need be. Initially cast as integers so they can be increased
-    # or decreased.
-    year = int(strftime("%Y", gmtime()))
-    month = int(strftime("%m", gmtime()))
-    day = int(strftime("%d", gmtime()))
-    hour = int(strftime("%H", gmtime()))
-    minute = int(strftime("%M", gmtime()))
-    second = int(strftime("%S", gmtime()))
-
-    # Set the end date in the "YYYY-MM-DDTHH:MM:SSZ" format to ensure
-    # compatibility with the API. The endDate is the date that is closest to
-    # the present.
-    end_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" + str(hour)
-                + ":" + str(minute) + ":" + str(second) + "Z")
+    # Set the end date to the current time.
+    end_date = datetime.datetime.strftime(datetime.datetime.now(), time_format)
 
     # Build an initially empty list to hold the packageId's.
     item_list = []
@@ -53,22 +34,11 @@ def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
 
     # The while loop where all of the logic is done.
     while True:
-        # Check to see if the current month is January. If it is, set it to
-        # be December instead and put the year back by one.
-        if month - 1 == 0:
-            month = 12
-            year = year - 1
-
-        # If the current month is not January, just set it to the previous
-        # month.
-        else:
-            month = month - 1
-
-        # Set the start date in the "YYYY-MM-DDTHH:MM:SSZ" format to ensure
-        # compatibility with the API. The startDate is the date that is further
-        # from the present.
-        start_date = (str(year) + "-" + str(month) + "-" + str(day) + "T" +
-                      str(hour) + ":" + str(minute) + ":" + str(second) + "Z")
+        # Set the start date to a time exactly one week prior to the end_date.
+        # Small intervals are used to ensure the program does not exceed the
+        # 10,000 item limit of the API.
+        start_date = (datetime.datetime.strptime(end_date, time_format)-
+                      timedelta(weeks=1)).__format__(time_format)
 
         # Get the initial list of published documents.
         pub_list = get_published(start_date, doc_type, end_date, page_size=100)
@@ -103,7 +73,7 @@ def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
             # If there is a next page, notify the logger, gather the page, and
             # move on to it.
             else:
-                logger.info(f"Moving to page {next_page}")
+                logger.debug(f"Moving to page {next_page}")
                 link = next_page + "&api_key=" + get_API_key()
                 pub_list = get_page(link)
 
@@ -123,14 +93,15 @@ def get_list_of_type(doc_type: str, write_to_file: bool) -> list:
         logger.info(f"Gathered {total_num} entries so far.")
 
         # if all of the entries have been gathered, break the loop. It's done.
-        if total_num == unit_count:
+        if total_num == num_entries:
+            logger.info("Goal reached, exiting loop.")
             break
 
     # Check whether the user wants to write the list to a file or simply return
     # it to be manipulated further.
     if write_to_file:
         # Write all of the packageId's to a file for use later
-        with open(f"{doc_type}_list.txt", 'w') as doc_list:
+        with open(f"{save_location}/{doc_type}_list.txt", 'w') as doc_list:
             for item in item_list:
                 doc_list.write(f"{item}\n")
 
