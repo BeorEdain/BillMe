@@ -8,9 +8,8 @@ from datetime import datetime, timedelta
 
 from interfaces.api_interface import *
 from interfaces.sql_interface import *
-
-# from api_interface import *
 from requests import *
+
 # from sql_interface import *
 
 # Set the time format. This is according to ISO8601 (yyyy-MM-dd'T'HH:mm:ss'Z').
@@ -68,8 +67,7 @@ list_of_docs = []
 
 # Pull the most recent list of collections if one or more days have elapsed
 # since the last run.
-# TODO: TRUE IS JUST FOR TESTING. REMOVE TO AVOID RUNNING EVERY TIME
-if tdelta.days >= 1 or True:
+if tdelta.days >= 1:
     # Log the age in days.
     logger.info(f"Collection is {tdelta.days} days old. Repulling.")
 
@@ -92,11 +90,6 @@ if tdelta.days >= 1 or True:
 
     # Get all of the document ID's of the specified type.
     list_of_docs = get_list_of_type(doc_type, False, entries_to_get)
-
-# # Open the specified document list.
-# with open(f"content/{doc_type}_list.txt", "rt") as list_doc:
-#     for item in list_doc:
-#         list_of_docs.append(item.strip("\n"))
 
 # Check to see what values from the list are currently in the database so as to
 # not end up performing double duty and inform the log.
@@ -128,7 +121,7 @@ config.update({"last_pulled":run_start})
 config.update({"num_entries":current_entries})
 
 # Write the changes to the config file.
-with open("config.json", 'wt') as config_file:
+with open("configs/config.json", 'wt') as config_file:
     config_file = json.dump(config, config_file, indent=4)
 
 # Write the list of unpullable documents to a file.

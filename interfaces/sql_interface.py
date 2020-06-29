@@ -1,12 +1,12 @@
 import datetime
 import json
-from datetime import date
 
 from mysql.connector import (
     IntegrityError, MySQLConnection, ProgrammingError, connect)
 
-from interfaces.api_interface import logger
 from classes.Bills import Bills
+from interfaces.api_interface import logger
+
 
 def get_credentials() -> MySQLConnection:
     """
@@ -47,7 +47,9 @@ def get_credentials() -> MySQLConnection:
 def insert_bill_values(digest: bytes):
     """
     First checks if the specified bill is in the table, theninserts the values
-    for it into the database if it isn't.
+    for it into the database if it isn't.\n
+    digest  = The document that is going to be placed into the table in a bytes
+              format as it is directly from the web page.
     """
 
     # Digest the bill so it can be parsed easily.
@@ -106,7 +108,7 @@ def insert_bill_values(digest: bytes):
 def check_if_exists(Id: str) -> bool:
     """
     A function that will check to see whether a specified document exists within
-    a table.
+    a table.\n
     Id  = The packageId of the document to be checked.
     """
     # Try to get the credentials for the server.
@@ -150,14 +152,29 @@ def check_if_exists(Id: str) -> bool:
         return False
 
 def check_all(doc_list: list, doc_type: str):
+    """
+    Pulls the packageId's of all of the entries in the table specified by
+    doc_type then compares them to the doc_list and removes any that are already
+    in the table.\n
+    doc_list    = A list of documents that are to be checked to see whether
+                  they're in the table yet or not.\n
+    doc_type    = The type of document that is being checked. E.g. BILLS
+    """
+    # Get the credentials of the database.
     mydb = get_credentials()
 
+    # Establish a cursor at the beginning of the database.
     cursor = mydb.cursor()
 
+    # Execute the command to select all of the packageId's from the table.
     cursor.execute(f"SELECT packageId FROM {doc_type.lower()};")
 
+    # Get the results of the search.
     result = cursor.fetchall()
 
+    # Search through each item in the result.
     for item in result:
-        if item[0] in doc_list:
+        # Compare each packageId to items in the list and remove it from the
+        # list if it does exist in the table already.
+        while item[0] in doc_list:
             doc_list.remove(item[0])
