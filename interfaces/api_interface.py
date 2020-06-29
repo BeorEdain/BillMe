@@ -3,9 +3,21 @@ import json
 import logging
 import os
 import urllib.request
+from urllib.error import HTTPError
 
-# Create a logger
-logger = build_logger()
+# Create custom logger and set the level.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create formatter, create handler, and assign the format to the handler.
+# TODO: Add an option to have a config file for the logger.
+formatter = logging.Formatter('%(asctime)s; %(levelname)s; %(filename)s; '+
+                                '%(funcName)s; %(message)s')
+handler = logging.FileHandler('Bill_The.log', 'w')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger.
+logger.addHandler(handler)
 
 # Set the site base. It should never change..
 site_base = "https://api.govinfo.gov/"
@@ -14,34 +26,12 @@ site_base = "https://api.govinfo.gov/"
 # TODO: Set as an optional passable variable from commandline.
 save_location = "content/"
 
-def build_logger() -> logging:
-    """
-    A builder for the log. Probably doesn't need to be a function, but here we
-    are.
-    """
-    # Create custom logger and set the level.
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
-    # Create formatter, create handler, and assign the format to the handler.
-    # TODO: Add an option to have a config file for the logger.
-    formatter = logging.Formatter('%(asctime)s: %(filename)s: %(levelname)s: '+
-                                  '%(funcName)s: %(message)s')
-    handler = logging.FileHandler('Bill_The.log', 'w')
-    handler.setFormatter(formatter)
-
-    # Add the handler to the logger.
-    logger.addHandler(handler)
-
-    return logger
-
-
 def get_page(link: str) -> bytes:
     """
     A helper definition to gather the web page and return it as a bytes stream
     """
     # Inform the logger that the page is being retrieved.
-    logger.debug("Getting the page")
+    logger.debug(f"Getting page {link}")
 
     # Get the site passed in from the link.
     site = urllib.request.urlopen(link)
@@ -69,12 +59,12 @@ def get_page(link: str) -> bytes:
     # Return the data as a bytes stream.
     return response
 
-    logger.debug("Checking for content")
-    while site.get('message') == "No results found":
-        logger.warning("Needed collection repull")
-        site = get_page(site)
+    # logger.debug("Checking for content")
+    # while site.get('message') == "No results found":
+    #     logger.warning("Needed collection repull")
+    #     site = get_page(site)
 
-    return site
+    # return site
 
 
 def save_to_json(json_in: bytes, name: str):
@@ -204,9 +194,14 @@ def get_package_summary(pkgID: str) -> bytes:
     logger.debug(f"Accessing {site}")
 
     # Append the API key after the logger call so it isn't leaked into the logs.
+    siteTemp = site
     site = site + "?api_key=" + get_API_key()
 
+    # try:
     return get_page(site)
+    
+    # except HTTPError as error:
+    #     logger.CRITICAL(f"{siteTemp} returned an error. {error}")
 
 
 def get_package(pkgID: str, content_type: str):

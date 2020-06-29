@@ -2,6 +2,7 @@
 .vscode/
 content/
 sensitive/
+configs/
 Bill_The.log
 
 # Byte-compiled / optimized / DLL files

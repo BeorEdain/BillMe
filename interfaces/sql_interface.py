@@ -5,8 +5,8 @@ from datetime import date
 from mysql.connector import (
     IntegrityError, MySQLConnection, ProgrammingError, connect)
 
-from api_interface import logger
-from Bills import Bills
+from interfaces.api_interface import logger
+from classes.Bills import Bills
 
 def get_credentials() -> MySQLConnection:
     """
@@ -148,3 +148,16 @@ def check_if_exists(Id: str) -> bool:
     # Otherwise, return false.
     else:
         return False
+
+def check_all(doc_list: list, doc_type: str):
+    mydb = get_credentials()
+
+    cursor = mydb.cursor()
+
+    cursor.execute(f"SELECT packageId FROM {doc_type.lower()};")
+
+    result = cursor.fetchall()
+
+    for item in result:
+        if item[0] in doc_list:
+            doc_list.remove(item[0])

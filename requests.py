@@ -2,17 +2,20 @@ import json
 from datetime import datetime, timedelta
 from time import gmtime, strftime
 
-from api_interface import *
+from interfaces.api_interface import *
 
 
 def get_list_of_type(doc_type: str, write_to_file: bool,
-                     num_entries) -> list:
+                     num_entries: int) -> list:
     """
     Get all of the specified type of items. For example, "BILLS" will retrieve
     the packageId of all bills.\n
     doc_type        = The type of document you want to retrieve. E.g. BILLS\n
     write_to_file   = Whether or not you want to write the list to a file or
                       have it returned as a list.
+    num_entries     = The number of entries that need to be pulled. This ensures
+                      that the program will not pull ALL of them every single
+                      time.
     """
 
     # Set the current format to the ISO8601 format.
@@ -87,13 +90,14 @@ def get_list_of_type(doc_type: str, write_to_file: bool,
 
         # Set the new end date to be the old start date. This ensures there is
         # no gaps in the data being gathered.
-        end_date = start_date
+        end_date = (datetime.datetime.strptime(start_date, time_format)-
+                    timedelta(seconds=-1)).__format__(time_format)
 
         # Inform the logger of the number of entries gathered up to this point.
         logger.info(f"Gathered {total_num} entries so far.")
 
         # if all of the entries have been gathered, break the loop. It's done.
-        if total_num == num_entries:
+        if total_num >= num_entries:
             logger.info("Goal reached, exiting loop.")
             break
 
