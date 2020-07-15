@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import json
 
 from mysql.connector import (
@@ -60,7 +60,7 @@ def insert_bill_values(digest: bytes):
     vals.last_modified = str(vals.last_modified).replace("Z","")
 
     # TODO: Test if this line is necessary.
-    vals.last_modified = datetime.datetime.strptime(vals.last_modified,
+    vals.last_modified = datetime.strptime(vals.last_modified,
                                                     '%Y-%m-%d %H:%M:%S')
 
     # I hate SQL.

@@ -22,7 +22,7 @@ def get_list_of_type(doc_type: str, write_to_file: bool,
     time_format = "%Y-%m-%dT%H:%M:%SZ"
 
     # Set the end date to the current time.
-    end_date = datetime.datetime.strftime(datetime.datetime.now(), time_format)
+    end_date = datetime.strftime(datetime.now(), time_format)
 
     # Build an initially empty list to hold the packageId's.
     item_list = []
@@ -40,7 +40,7 @@ def get_list_of_type(doc_type: str, write_to_file: bool,
         # Set the start date to a time exactly one week prior to the end_date.
         # Small intervals are used to ensure the program does not exceed the
         # 10,000 item limit of the API.
-        start_date = (datetime.datetime.strptime(end_date, time_format)-
+        start_date = (datetime.strptime(end_date, time_format)-
                       timedelta(weeks=1)).__format__(time_format)
 
         # Get the initial list of published documents.
@@ -90,7 +90,7 @@ def get_list_of_type(doc_type: str, write_to_file: bool,
 
         # Set the new end date to be the old start date. This ensures there is
         # no gaps in the data being gathered.
-        end_date = (datetime.datetime.strptime(start_date, time_format)-
+        end_date = (datetime.strptime(start_date, time_format)-
                     timedelta(seconds=-1)).__format__(time_format)
 
         # Inform the logger of the number of entries gathered up to this point.

@@ -24,7 +24,7 @@ doc_type = "BILLS"
 current_entries = 0
 
 # Get the time that the program starts.
-run_start = datetime.datetime.now().strftime(time_format)
+run_start = datetime.now().strftime(time_format)
 
 # Create a config variable to store the values pulled from the file.
 config = {}
@@ -59,8 +59,8 @@ except FileNotFoundError as error:
     config = data
 
 # Find out how much time has elapsed since the last run.
-tdelta = (datetime.datetime.strptime(run_start, time_format)-
-          datetime.datetime.strptime(config.get("last_pulled"), time_format))
+tdelta = (datetime.strptime(run_start, time_format)-
+          datetime.strptime(config.get("last_pulled"), time_format))
 
 # Placeholder for a list of documents.
 list_of_docs = []
@@ -130,7 +130,7 @@ with open("content/unpullable.txt", 'wt') as unpullable:
         unpullable.write(f"{item}\n")
 
 # Set the end date so it's easy to see how long the program ran.
-run_end = datetime.datetime.now().strftime(time_format)
+run_end = datetime.now().strftime(time_format)
 
 # Output the start and end times to the logger.
 logger.info(f"Run complete. Started {run_start} and ended {run_end}.")

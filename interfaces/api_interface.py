@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import urllib.request
+from http.client import IncompleteRead
 from urllib.error import HTTPError
 
 # Create custom logger and set the level.
@@ -36,7 +37,13 @@ def get_page(link: str) -> bytes:
     site = urllib.request.urlopen(link)
 
     # Read the site.
-    response = site.read()
+    try:
+        response = site.read()
+    
+    except IncompleteRead as error:
+        logger.error("There was an incomplete read, retrying.")
+        site = urllib.request.urlopen(link)
+        response = site.read()
 
     # If the site isn't loading for any reason.
     # TODO: Set a finite amount of retries before failing.
@@ -57,13 +64,6 @@ def get_page(link: str) -> bytes:
 
     # Return the data as a bytes stream.
     return response
-
-    # logger.debug("Checking for content")
-    # while site.get('message') == "No results found":
-    #     logger.warning("Needed collection repull")
-    #     site = get_page(site)
-
-    # return site
 
 
 def save_to_json(json_in: bytes, name: str):
@@ -196,11 +196,7 @@ def get_package_summary(pkgID: str) -> bytes:
     siteTemp = site
     site = site + "?api_key=" + get_API_key()
 
-    # try:
     return get_page(site)
-    
-    # except HTTPError as error:
-    #     logger.CRITICAL(f"{siteTemp} returned an error. {error}")
 
 
 def get_package(pkgID: str, content_type: str):

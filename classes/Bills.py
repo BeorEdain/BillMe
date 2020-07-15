@@ -1,4 +1,5 @@
 class Bills:
+    """A class that is used to build the Bills"""
     def __init__(self, digest):
         self.title = digest.get("title")
         self.short_title = digest.get("shortTitle")
